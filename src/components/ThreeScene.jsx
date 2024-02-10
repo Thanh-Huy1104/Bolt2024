@@ -123,23 +123,39 @@ const ThreeScene = ({ model }) => {
     // Call this function in your useEffect after setting up the scene and before loading the model
 
     // Handle window resizing
-    const onWindowResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+    
+
+    // Cleanup function
+    function updateSize() {
+      const width = mountRef.current.clientWidth;
+      const height = mountRef.current.clientHeight;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(width, height);
       render();
-    };
-    window.addEventListener("resize", onWindowResize);
+    }
+
+    // Call updateSize to set initial size
+    updateSize();
+
+    // Add event listener to resize on window resize
+    window.addEventListener('resize', updateSize);
+
+    // Model loading, lighting, and other setups as before
+
+    function render() {
+      renderer.render(scene, camera);
+    }
 
     // Cleanup function
     return () => {
-      window.removeEventListener("resize", onWindowResize);
+      window.removeEventListener('resize', updateSize); // Remove resize listener
       mountRef.current.removeChild(renderer.domElement); // Remove renderer from DOM
-      // Proper cleanup for OrbitControls and other resources might be necessary
+      // Additional cleanup as necessary
     };
-  }, []);
+  }, [model]); // Ensure effect runs again if the model prop changes
 
-  return <div ref={mountRef} style={{ width: "100%", height: "100%" }} />;
+  return <div ref={mountRef} style={{ width: '100%', height: '100%' }} />;
 };
 
-export default ThreeScene;
+export default ThreeScene;  
