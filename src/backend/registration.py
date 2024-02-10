@@ -1,36 +1,32 @@
 from flask import Flask, request, jsonify
-import firebase_admin
-from firebase_admin import credentials, firestore, db
+from firebase import initialize_firebase
+from firebase_admin import auth, firestore
 
 app = Flask(__name__)
 
-# Initialize Firebase Admin
-cred = credentials.Certificate('path/to/your/firebase-adminsdk.json')
-firebase_admin.initialize_app(cred)
+# Initialize Firebase
+initialize_firebase()
 
-@app.route('/add_user', methods=['POST'])
-def add_user():
-    user_details = request.json
-    user_id = user_details['userId']
-    email = user_details['email']
+@app.route('/signUp', methods=['POST'])
+def signUp():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
     
-    # Choose Firestore or Realtime Database based on your preference
-    
-    # Firestore Example
-    firestore_db = firestore.client()
-    firestore_db.collection('users').document(user_id).set({
-        'email': email
-        # Add other user details here
-    })
-    
-    # Realtime Database Example
-    # realtime_db_ref = db.reference('/users')
-    # realtime_db_ref.child(user_id).set({
-    #     'email': email
-    #     # Add other user details here
-    # })
-    
-    return jsonify({'status': 'success'}), 200
+    try:
+        user_record = auth.create_user(
+            email=email,
+            password=password
+        )
+        firestore_db = firestore.client()
+        firestore_db.collection('users').document(user_record.uid).set({
+            'email': email
+            # Do not store the password; Firebase Auth handles that securely
+        })
+        return jsonify({'status': 'success', 'userId': user_record.uid}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
 
 if __name__ == '__main__':
     app.run(debug=True)
